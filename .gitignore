@@ -1,0 +1,11 @@
+
+
+# File Extensions
+*.bin # used for storing ndarrays
+*.schematic
+*.schem
+*.litematic
+
+
+# Folders
+__pycache__
