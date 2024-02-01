@@ -14,106 +14,8 @@ def write_ndarray(blocks: np.ndarray, path: str, name: str) -> None:
     file_str = util.ndarray_to_str(blocks)
     with open(path + name, 'w') as file:
         file.write(file_str)
-        print(f'wrote {name} to {path}')
+        # print(f'wrote {name} to {path}')
     return True
-
-'''
-format of .blockdata file:
-input size:x,y,z\n      (size of the input)
-output size:x,y,z\n     (size of the output)
-dim of continuity:n\n   (dimension the output extends of the input 0/1/2)
-dir of continuity:b\n   (direction the output extends -/+ )  
-'''
-def load_blockdata(src_path: str) -> (np.ndarray, np.ndarray, (int, str)):
-    lines = ''
-    with open(src_path, 'r') as file:
-        lines = file.readlines()
-    lines = ''.join(lines)
-    lines = lines.split('<>\n')
-
-    metadata = lines[0]
-    input = lines[1]
-    output = lines[2]
-
-    #get the metadata
-    metadata = metadata.split('\n')
-    tuple_str = metadata[0].split(':')[1].split(', ')[0]
-    input_dims = tuple(map(int, tuple_str.split(',')))
-    tuple_str = metadata[1].split(':')[1].split(', ')[0]
-    output_dims = tuple(map(int, tuple_str.split(',')))
-    print(input_dims)
-
-    #get the input and output array
-    input_ndarray = util.ndarray_from_str(input, input_dims)
-    output_ndarray = util.ndarray_from_str(output, output_dims)
-
-    return input_ndarray, output_ndarray, (None,None)
-
-
-'''
-format of .blockdata file:
-input size:x,y,z\n      (size of the input)
-output size:x,y,z\n     (size of the output)
-dim of continuity:n\n   (dimension the output extends of the input 0/1/2)
-dir of continuity:b\n   (direction the output extends -/+ )  
-'''
-def np_to_blockdata(input: np.ndarray, output: np.ndarray, io_relation: (int, str), dest_path: str) -> None:
-    #verify the data
-    if len(input.shape) != 3 or len(input.shape) != 3:
-        print('numpy arrays must be 3 dimensional')
-        return
-    if io_relation[0] not in [0,1,2]:
-        print('io_relation[0] must be 0, 1, or 2')
-        return
-    if io_relation[1] not in '+-' or len(io_relation[1]) != 1:
-        print('io_relation[1] must be + or - as str')
-        return
-    # if not dest_path.endswith('.blockdata'):
-    #     print('dest_path must be a path ending with /filename.blockdata')
-    #     return
-
-    #create and verify metadata
-    inp_sz_X, inp_sz_Y, inp_sz_Z = input.shape
-    out_sz_X, out_sz_Y, out_sz_Z = output.shape
-    dim_of_continuity = io_relation[0]
-    dir_of_continuity = io_relation[1]
-
-    #verify dimension of continuity by checking input & output dimensions
-    dims = [0,1,2]
-    dims.remove(dim_of_continuity)
-    #other 2 dims of output should = dims of input
-    discrepency = False
-    for dim in dims:
-        if input.shape[dim] != output.shape[dim]:
-            print(f"dimensions of input and output should be same, except the dimension of continutiy.\nDimension {dim} of input and output arent equal")
-            discrepency = True
-    if discrepency: return
-
-    file_str = '' #the string to write to .blockdata
-
-    #add metadata
-    file_str += (f'input size:{inp_sz_X},{inp_sz_Y},{inp_sz_Z}\n')
-    file_str += (f'output size:{out_sz_X},{out_sz_Y},{out_sz_Z}\n')
-    file_str += (f'dim of continuity:{dim_of_continuity}\n')
-    file_str += (f'dir of continuity:{dir_of_continuity}\n')
-
-    #seperate metadata and arrays
-    file_str += ('<>\n')
-
-    #get the str for the input block array
-    input_str = util.ndarray_to_str(input)
-    file_str += input_str
-    print(util.ndarray_from_str(input_str, (inp_sz_X, inp_sz_Y, inp_sz_Z)))
-
-    #seperate input and output arrays
-    file_str += ('<>\n')
-
-    #get the str for the block array
-    file_str += (util.ndarray_to_str(output))
-
-    #finally, write the file string to path & name given in parameters
-    with open(dest_path, 'w') as file:
-        file.write(file_str)
 
 def save_tokenized_schems(schem_datas: list[SchematicData], 
                           exclude_list: list[bool], 
@@ -167,12 +69,6 @@ def load_tokenized_schems(path: str) -> ( list[SchematicData], pd.DataFrame , di
         print(f'loaded {bin_filenames[i]}')
     
     return schem_datas, df, None
-
-def save_ndarray(arr: np.ndarray) -> None:
-    arr_as_bytes = bytes()
-    
-    dims = arr.shape
-    n_dims = np.uint8(dims)
     
 def save_ndarray(arr: np.ndarray, path) -> bytes:
     dtype = np.uint8(arr.dtype.num)                                         #dtype stored in 1 byte
